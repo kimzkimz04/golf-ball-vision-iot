@@ -11,6 +11,8 @@
 import cv2
 import numpy as np
 
+FONT = cv2.FONT_HERSHEY_SIMPLEX
+
 
 def preprocess(frame, blur_kernel: int = 9):
     """แปลงเป็นภาพขาวดำและเบลอ เตรียมส่งให้ HoughCircles"""
@@ -118,23 +120,52 @@ def verify_circles(gray, circles, param1: int = 100, min_support: float = 0.45):
 
 
 def _outlined_text(frame, text, org, color, scale=0.5):
-    cv2.putText(frame, text, org, cv2.FONT_HERSHEY_SIMPLEX, scale,
-                (0, 0, 0), 3, cv2.LINE_AA)
-    cv2.putText(frame, text, org, cv2.FONT_HERSHEY_SIMPLEX, scale,
-                color, 1, cv2.LINE_AA)
+    cv2.putText(frame, text, org, FONT, scale, (0, 0, 0), 3, cv2.LINE_AA)
+    cv2.putText(frame, text, org, FONT, scale, color, 1, cv2.LINE_AA)
+
+
+def _place_label(x: int, y: int, width: int, height: int, taken, frame_h: int):
+    """หาตำแหน่งวางป้ายที่ไม่ทับป้ายอื่น โดยเลื่อนลงทีละบรรทัดจนกว่าจะว่าง
+
+    จำเป็นเมื่อลูกบอลวางชิดกัน ไม่งั้นป้ายจะซ้อนกันจนอ่านไม่ออก
+    """
+    step = height + 4
+    for _ in range(12):
+        box = (x, y - height, x + width, y)
+        overlap = any(not (box[2] < t[0] or box[0] > t[2] or
+                           box[3] < t[1] or box[1] > t[3]) for t in taken)
+        if not overlap and y < frame_h - 2:
+            taken.append(box)
+            return x, y
+        y += step
+    taken.append((x, y - height, x + width, y))
+    return x, min(y, frame_h - 2)
 
 
 def draw_verified(frame, circles, labels=None):
     """วาดวงกลมพร้อมคะแนนความน่าเชื่อถือ - วงที่คะแนนสูงจะเขียวเข้ม
 
     labels = ข้อความเพิ่มเติมของแต่ละวง (เช่นสีที่ตรวจได้) จะวาดไว้ใต้วงกลม
+    ถ้าป้ายจะทับกัน จะถูกเลื่อนลงอัตโนมัติให้อ่านออกทุกป้าย
     """
+    frame_h, frame_w = frame.shape[:2]
+    taken = []
+
     for i, (x, y, r, support) in enumerate(circles, start=1):
         color = (0, 255, 0) if support >= 0.7 else (0, 200, 255)
         cv2.circle(frame, (x, y), r, color, 2)
         cv2.circle(frame, (x, y), 3, (0, 0, 255), -1)
-        _outlined_text(frame, f"#{i} r={r} {support:.0%}", (x - r, y - r - 8), color)
+
+        head = f"#{i} r={r} {support:.0%}"
+        (tw, th), _ = cv2.getTextSize(head, FONT, 0.5, 1)
+        hx, hy = _place_label(max(0, min(x - r, frame_w - tw)), y - r - 8,
+                              tw, th, taken, frame_h)
+        _outlined_text(frame, head, (hx, hy), color)
+
         if labels and i <= len(labels):
-            _outlined_text(frame, labels[i - 1], (x - r, y + r + 20),
-                           (255, 255, 255), scale=0.6)
+            text = f"#{i} {labels[i - 1]}"
+            (tw, th), _ = cv2.getTextSize(text, FONT, 0.6, 1)
+            lx, ly = _place_label(max(0, min(x - r, frame_w - tw)), y + r + 20,
+                                  tw, th, taken, frame_h)
+            _outlined_text(frame, text, (lx, ly), (255, 255, 255), scale=0.6)
     return frame
