@@ -1,0 +1,140 @@
+"""Phase 2: ตรวจจับวัตถุทรงกลมด้วย Hough Circle Transform
+
+หลักการทำงานแบบสั้น ๆ:
+  1. แปลงภาพสีเป็นภาพขาวดำ (สีไม่ช่วยในการหาขอบ แถมช้ากว่า)
+  2. เบลอภาพเพื่อลด noise ไม่งั้นจะเจอ "วงกลม" ปลอมเต็มไปหมด
+  3. ให้ HoughCircles หาขอบที่โค้งเป็นวงกลม แล้วคืนตำแหน่งกับรัศมีมาให้
+
+ยังไม่แยกว่าเป็นลูกกอล์ฟหรือไม่ - เจอกลมอะไรก็ตีกรอบหมด (ค่อยแยกใน Phase 3)
+"""
+
+import cv2
+import numpy as np
+
+
+def preprocess(frame, blur_kernel: int = 9):
+    """แปลงเป็นภาพขาวดำและเบลอ เตรียมส่งให้ HoughCircles"""
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    if blur_kernel >= 3:
+        # median blur ลบจุด noise เล็ก ๆ ได้ดีโดยที่ขอบวัตถุยังคมอยู่
+        # ต้องเป็นเลขคี่เสมอ ใช้ | 1 บังคับให้เป็นคี่
+        gray = cv2.medianBlur(gray, blur_kernel | 1)
+    return gray
+
+
+def find_circles(gray, dp=1.2, min_dist=60, param1=100, param2=40,
+                 min_radius=10, max_radius=150, method="classic"):
+    """หาวงกลมในภาพขาวดำ คืนค่าเป็น list ของ (x, y, radius)
+
+    method="classic" -> HOUGH_GRADIENT  เจอง่าย เร็ว แต่รัศมีคลาดเคลื่อนบ้าง
+    method="alt"     -> HOUGH_GRADIENT_ALT  รัศมีแม่นกว่ามาก แต่ช้ากว่าเล็กน้อย
+                        (โหมดนี้ param2 คือ "ความกลม" 0.0-1.0 ไม่ใช่ค่า threshold)
+    """
+    if method == "alt":
+        circles = cv2.HoughCircles(
+            gray, cv2.HOUGH_GRADIENT_ALT, dp=1.5, minDist=min_dist,
+            param1=300, param2=0.85, minRadius=min_radius, maxRadius=max_radius)
+    else:
+        circles = cv2.HoughCircles(
+            gray, cv2.HOUGH_GRADIENT, dp=dp, minDist=min_dist,
+            param1=param1, param2=param2,
+            minRadius=min_radius, maxRadius=max_radius)
+
+    if circles is None:
+        return []
+
+    # ผลลัพธ์มีรูปร่าง (1, N, 3) ต้องดึงชั้นแรกออกมาก่อน
+    found = np.round(circles[0]).astype(int)
+    # เรียงจากวงใหญ่ไปเล็ก วงใหญ่มักคือวัตถุที่อยู่ใกล้กล้องและเราสนใจที่สุด
+    return sorted((tuple(c) for c in found), key=lambda c: c[2], reverse=True)
+
+
+def draw_circles(frame, circles):
+    """วาดกรอบวงกลมและจุดศูนย์กลางลงบนภาพ"""
+    for i, (x, y, r) in enumerate(circles, start=1):
+        cv2.circle(frame, (x, y), r, (0, 255, 0), 2)      # เส้นรอบวง สีเขียว
+        cv2.circle(frame, (x, y), 3, (0, 0, 255), -1)     # จุดศูนย์กลาง สีแดง
+        label = f"#{i} r={r}"
+        cv2.putText(frame, label, (x - r, y - r - 8),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 3, cv2.LINE_AA)
+        cv2.putText(frame, label, (x - r, y - r - 8),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1, cv2.LINE_AA)
+    return frame
+
+
+def edge_support(edges, x: int, y: int, r: int, samples: int = 72) -> float:
+    """วัดว่า "ขอบจริง" ในภาพรองรับวงกลมนี้มากแค่ไหน คืนค่า 0.0-1.0
+
+    HoughCircles ตัดสินจากคะแนนสะสมในตาราง ซึ่งบางครั้งให้วงกลมที่ไม่มีอยู่จริง
+    (เช่น วงยักษ์ที่คร่อมทั้งภาพ) วิธีเช็กคือเดินไปตามเส้นรอบวงแล้วนับว่า
+    มีกี่จุดที่ตรงกับขอบจริงในภาพ ถ้าวงกลมจริง จะมีขอบรองรับเกือบทั้งวง
+    """
+    theta = np.linspace(0, 2 * np.pi, samples, endpoint=False)
+    xs = np.round(x + r * np.cos(theta)).astype(int)
+    ys = np.round(y + r * np.sin(theta)).astype(int)
+
+    h, w = edges.shape
+    inside = (xs >= 0) & (xs < w) & (ys >= 0) & (ys < h)
+    if not inside.any():
+        return 0.0
+
+    # จุดที่ตกนอกภาพถือว่าไม่มีขอบรองรับ จึงหารด้วยจำนวนจุดทั้งหมด
+    return float(np.count_nonzero(edges[ys[inside], xs[inside]]) / samples)
+
+
+def suppress_overlaps(circles, overlap_ratio: float = 0.6):
+    """ตัดวงกลมที่ซ้อนทับกัน เก็บไว้เฉพาะวงที่คะแนนดีที่สุด
+
+    ลูกบอล 1 ลูกมักถูกจับได้หลายวงซ้อนกัน (วงพอดีลูก กับวงใหญ่เกินจริง)
+    ถ้าจุดศูนย์กลางของสองวงอยู่ใกล้กันมาก ให้ถือว่าเป็นวัตถุเดียวกัน
+    """
+    kept = []
+    for circle in sorted(circles, key=lambda c: c[3], reverse=True):
+        x, y, r = circle[:3]
+        duplicate = False
+        for kx, ky, kr, _ in kept:
+            distance = np.hypot(x - kx, y - ky)
+            if distance < max(r, kr) * overlap_ratio:
+                duplicate = True
+                break
+        if not duplicate:
+            kept.append(circle)
+    return kept
+
+
+def verify_circles(gray, circles, param1: int = 100, min_support: float = 0.45):
+    """กรองวงกลมที่ HoughCircles หามาได้ ให้เหลือเฉพาะวงที่น่าเชื่อถือ
+
+    คืนค่าเป็น list ของ (x, y, radius, support) เรียงจากคะแนนมากไปน้อย
+    """
+    # ใช้ threshold ชุดเดียวกับที่ HoughCircles ใช้ภายใน จะได้ขอบชุดเดียวกัน
+    edges = cv2.Canny(gray, max(1, param1 // 2), max(2, param1))
+    # ขยายขอบเล็กน้อย เผื่อวงกลมที่คำนวณได้เพี้ยนไป 1-2 พิกเซล
+    edges = cv2.dilate(edges, np.ones((3, 3), np.uint8))
+
+    scored = [(x, y, r, edge_support(edges, x, y, r)) for x, y, r in circles]
+    passed = [c for c in scored if c[3] >= min_support]
+    return suppress_overlaps(passed), edges
+
+
+def _outlined_text(frame, text, org, color, scale=0.5):
+    cv2.putText(frame, text, org, cv2.FONT_HERSHEY_SIMPLEX, scale,
+                (0, 0, 0), 3, cv2.LINE_AA)
+    cv2.putText(frame, text, org, cv2.FONT_HERSHEY_SIMPLEX, scale,
+                color, 1, cv2.LINE_AA)
+
+
+def draw_verified(frame, circles, labels=None):
+    """วาดวงกลมพร้อมคะแนนความน่าเชื่อถือ - วงที่คะแนนสูงจะเขียวเข้ม
+
+    labels = ข้อความเพิ่มเติมของแต่ละวง (เช่นสีที่ตรวจได้) จะวาดไว้ใต้วงกลม
+    """
+    for i, (x, y, r, support) in enumerate(circles, start=1):
+        color = (0, 255, 0) if support >= 0.7 else (0, 200, 255)
+        cv2.circle(frame, (x, y), r, color, 2)
+        cv2.circle(frame, (x, y), 3, (0, 0, 255), -1)
+        _outlined_text(frame, f"#{i} r={r} {support:.0%}", (x - r, y - r - 8), color)
+        if labels and i <= len(labels):
+            _outlined_text(frame, labels[i - 1], (x - r, y + r + 20),
+                           (255, 255, 255), scale=0.6)
+    return frame

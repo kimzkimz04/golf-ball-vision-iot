@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.jpg
+*.png
+*.mp4
+.vscode/
+.idea/
+
+# ผลลัพธ์ตอนรันจริง สร้างใหม่ได้เสมอ ไม่ต้องเก็บใน git
+snapshots/
+detections.csv
