@@ -44,6 +44,15 @@ def _signature(detections):
     return (golf, rejected)
 
 
+def _safe(text: str) -> str:
+    """ทำให้ข้อความใช้เป็นชื่อไฟล์ได้อย่างปลอดภัย
+
+    เหตุผล: ชื่อสาเหตุอย่าง "wrong color: Orange" มีเครื่องหมาย : ปนอยู่
+    ซึ่งใช้ในชื่อไฟล์บน Windows ไม่ได้ และทำให้คำสั่งบางตัวใน terminal สับสน
+    """
+    return "".join(ch if ch.isalnum() else "" for ch in text)
+
+
 def _filename(detections) -> str:
     """ตั้งชื่อไฟล์ให้อ่านแล้วรู้เลยว่าภาพนั้นเจออะไร"""
     golf = [d for d in detections if d["golf"]]
@@ -52,10 +61,10 @@ def _filename(detections) -> str:
 
     parts = [stamp]
     if golf:
-        colors = "-".join(sorted(d["color"].lower() for d in golf))
+        colors = "-".join(sorted(_safe(d["color"]).lower() for d in golf))
         parts.append(f"golf{len(golf)}_{colors}")
     if rejected:
-        reasons = "-".join(sorted({d["reason"].replace(" ", "") for d in rejected}))
+        reasons = "-".join(sorted({_safe(d["reason"]) for d in rejected}))
         parts.append(f"reject{len(rejected)}_{reasons}")
     return "_".join(parts) + ".jpg"
 
