@@ -10,6 +10,7 @@
 หรือเปลี่ยนจากลูกกอล์ฟเป็นลูกเทนนิส
 """
 
+import collections
 import csv
 import os
 import time
@@ -181,3 +182,70 @@ class DataCollector:
         write_rows(self.csv_path, detections, label=self.label)
         self.count += len(detections)
         return len(detections)
+
+
+class SessionStats:
+    """เก็บสถิติตลอดรอบการทำงาน ไว้สรุปให้ดูตอนปิดโปรแกรม
+
+    นับเป็น "จำนวนเฟรมที่เห็น" ไม่ใช่ "จำนวนลูก" เพราะลูกบอลลูกเดียวที่วางค้างไว้
+    จะถูกเห็นซ้ำทุกเฟรม การนับเป็นลูกจึงไม่มีความหมาย
+    """
+
+    def __init__(self):
+        self.start = time.time()
+        self.frames = 0
+        self.frames_with_object = 0
+        self.color_frames = collections.Counter()      # กี่เฟรมที่เห็นสีนี้
+        self.color_max = collections.Counter()         # เห็นพร้อมกันมากสุดกี่ลูก
+        self.reject_frames = collections.Counter()
+        self.max_golf = 0
+        self.max_objects = 0
+        self.events = 0                                # จำนวนภาพที่บันทึกไว้
+
+    def update(self, detections):
+        self.frames += 1
+        if not detections:
+            return
+        self.frames_with_object += 1
+
+        golf = collections.Counter(d["color"] for d in detections if d["golf"])
+        rejects = collections.Counter(d["reason"] for d in detections if not d["golf"])
+        for color, n in golf.items():
+            self.color_frames[color] += 1
+            self.color_max[color] = max(self.color_max[color], n)
+        for reason in rejects:
+            self.reject_frames[reason] += 1
+
+        self.max_golf = max(self.max_golf, sum(golf.values()))
+        self.max_objects = max(self.max_objects, len(detections))
+
+    def report(self) -> str:
+        elapsed = max(0.001, time.time() - self.start)
+        fps = self.frames / elapsed
+        secs = lambda n: n / fps if fps > 0 else 0
+
+        lines = ["=" * 62,
+                 f"สรุปผลรอบนี้  ({elapsed:.0f} วินาที / {self.frames} เฟรม / เฉลี่ย {fps:.1f} FPS)",
+                 "=" * 62]
+
+        if self.color_frames:
+            lines.append("ลูกกอล์ฟที่เจอ")
+            for color, n in self.color_frames.most_common():
+                lines.append(f"   {color:<10} เห็นใน {n:>5} เฟรม ({secs(n):>5.1f} วินาที)"
+                             f"   สูงสุดพร้อมกัน {self.color_max[color]} ลูก")
+        else:
+            lines.append("ลูกกอล์ฟที่เจอ: ไม่พบเลย")
+
+        if self.reject_frames:
+            lines.append("สิ่งแปลกปลอมที่ปฏิเสธ")
+            for reason, n in self.reject_frames.most_common():
+                lines.append(f"   {reason:<22} เห็นใน {n:>5} เฟรม ({secs(n):>5.1f} วินาที)")
+
+        lines.append(f"เห็นวัตถุพร้อมกันมากสุด {self.max_objects} ชิ้น "
+                     f"(เป็นลูกกอล์ฟ {self.max_golf} ลูก)")
+        lines.append(f"เฟรมที่เจอวัตถุ {self.frames_with_object}/{self.frames} "
+                     f"({self.frames_with_object/max(1,self.frames):.0%} ของเวลาทั้งหมด)")
+        if self.events:
+            lines.append(f"บันทึกภาพไว้ {self.events} เหตุการณ์")
+        lines.append("=" * 62)
+        return "\n".join(lines)

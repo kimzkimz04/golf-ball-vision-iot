@@ -17,6 +17,7 @@
 import argparse
 import os
 import sys
+from collections import Counter
 from datetime import datetime
 
 os.environ.setdefault("OPENCV_LOG_LEVEL", "ERROR")
@@ -30,7 +31,7 @@ from utils.color_classifier import classify_color, color_scores
 from utils.detector import draw_verified, find_circles, preprocess, verify_circles
 from utils.draw import draw_text_lines, window_closed
 from utils.fps import FPSCounter
-from utils.recorder import DataCollector, EventRecorder
+from utils.recorder import DataCollector, EventRecorder, SessionStats
 
 # ชื่อหน้าต่างต้องเป็นภาษาอังกฤษล้วน! Qt ของ OpenCV 5 หาหน้าต่างที่ชื่อมีภาษาไทย
 # ไม่เจอ ทำให้ createTrackbar พังด้วย error "NULL window handler"
@@ -125,6 +126,7 @@ def main() -> int:
 
     fps_counter = FPSCounter(config.FPS_AVG_FRAMES)
     show_debug = False
+    stats = SessionStats()
 
     collector = None
     if args.collect:
@@ -194,9 +196,14 @@ def main() -> int:
 
             fps_counter.update()
             draw_verified(frame, circles, labels)
+            # แจกแจงสีให้เห็นบนจอ เวลามีลูกบอลหลายลูกพร้อมกัน
+            by_color = Counter(d["color"] for d in detections if d["golf"])
+            breakdown = " ".join(f"{c}:{n}" for c, n in sorted(by_color.items()))
+
+            stats.update(detections)
             draw_text_lines(frame, [
                 f"FPS: {fps_counter.fps:.1f}   Circles: {len(circles)}/{len(raw)}",
-                f"Golf Ball: {golf_count}   Rejected: {reject_count}",
+                f"Golf Ball: {golf_count} [{breakdown or '-'}]   Rejected: {reject_count}",
                 "Q=quit  S=save  D=debug  C=calibrate color",
             ])
 
@@ -210,6 +217,7 @@ def main() -> int:
             if recorder is not None:
                 saved_path, message = recorder.update(frame, detections, clean_frame)
                 if saved_path:
+                    stats.events += 1
                     print(f"[{datetime.now():%H:%M:%S}] {message}")
                     print(f"             บันทึกภาพ: {saved_path}")
 
@@ -264,6 +272,8 @@ def main() -> int:
         if collector is not None:
             print(f"เก็บข้อมูลของ '{collector.label}' ได้ทั้งหมด {collector.count} แถว "
                   f"-> {collector.csv_path}")
+        else:
+            print("\n" + stats.report())
 
     return 0
 
