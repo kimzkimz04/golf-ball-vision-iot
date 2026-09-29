@@ -273,7 +273,12 @@ def main() -> int:
             print(f"เก็บข้อมูลของ '{collector.label}' ได้ทั้งหมด {collector.count} แถว "
                   f"-> {collector.csv_path}")
         else:
-            print("\n" + stats.report())
+            summary = stats.report()
+            print("\n" + summary)
+            # เขียนลงไฟล์ด้วย เผื่อ terminal ถูกปิดไปก่อนหรือมองไม่ทัน
+            with open(config.SUMMARY_FILE, "a", encoding="utf-8") as f:
+                f.write(f"\n[{datetime.now():%Y-%m-%d %H:%M:%S}]\n{summary}\n")
+            print(f"(สรุปนี้ถูกบันทึกไว้ใน {config.SUMMARY_FILE} ด้วย)")
 
     return 0
 

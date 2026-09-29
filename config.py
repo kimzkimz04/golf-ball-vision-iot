@@ -119,3 +119,7 @@ CAPTURE_SAVE_CLEAN = True
 
 # ไฟล์สำหรับโหมดเก็บข้อมูล (--collect) แยกจาก detections.csv ของการใช้งานปกติ
 COLLECT_CSV = "calibration_data.csv"
+
+
+# ไฟล์เก็บสรุปผลทุกรอบที่รัน (ต่อท้ายเรื่อย ๆ) เผื่อมองไม่ทันตอนโปรแกรมปิด
+SUMMARY_FILE = "session_summary.txt"

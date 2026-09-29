@@ -11,3 +11,4 @@ venv/
 # ผลลัพธ์ตอนรันจริง สร้างใหม่ได้เสมอ ไม่ต้องเก็บใน git
 snapshots/
 detections.csv
+session_summary.txt
