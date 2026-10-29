@@ -5,10 +5,25 @@ venv/
 *.jpg
 *.png
 *.mp4
-.vscode/
+# ภาพตัวอย่างสำหรับรีเพลย์/OpenCV container (28 รูป ~1.9 MB) ต้องอยู่ใน git ด้วย
+!samples/*.jpg
+# เก็บเฉพาะไฟล์ตั้งค่ารัน/ดีบักของโปรเจกต์ ส่วนค่าส่วนตัวอื่น ๆ ไม่ต้องขึ้น git
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
 
 # ผลลัพธ์ตอนรันจริง สร้างใหม่ได้เสมอ ไม่ต้องเก็บใน git
 snapshots/
+output/
 detections.csv
 session_summary.txt
+
+# รหัสผ่าน / token ของระบบ IoT - ห้ามขึ้น GitHub เด็ดขาด
+.env
+
+# ข้อมูลที่ Node-RED สร้างเองตอนรัน (เก็บไว้แค่ flows.json)
+docker/nodered/*
+!docker/nodered/flows.json

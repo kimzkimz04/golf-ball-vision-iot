@@ -19,15 +19,16 @@ os.environ.setdefault("OPENCV_LOG_LEVEL", "ERROR")
 import cv2
 
 import config
-from utils.camera import list_cameras, open_camera, print_camera_error
+from utils.camera import list_cameras, open_camera, pick_camera, print_camera_error
 from utils.draw import draw_text_lines, window_closed
 from utils.fps import FPSCounter
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Phase 1: ทดสอบกล้องพร้อมแสดง FPS")
-    parser.add_argument("-c", "--camera", type=int, default=config.CAMERA_INDEX,
-                        help=f"index ของกล้อง (ค่าเริ่มต้น: {config.CAMERA_INDEX})")
+    parser.add_argument("-c", "--camera", type=int, default=None,
+                        help=f"index ของกล้อง (ไม่ใส่ = หากล้องที่ชื่อมี '{config.CAMERA_NAME}' "
+                             f"ถ้าไม่เจอใช้ index {config.CAMERA_INDEX})")
     parser.add_argument("--width", type=int, default=config.FRAME_WIDTH,
                         help=f"ความกว้างภาพ (ค่าเริ่มต้น: {config.FRAME_WIDTH})")
     parser.add_argument("--height", type=int, default=config.FRAME_HEIGHT,
@@ -40,6 +41,7 @@ def main() -> int:
         list_cameras()
         return 0
 
+    args.camera = pick_camera(args.camera, config.CAMERA_NAME, config.CAMERA_INDEX)
     cap = open_camera(args.camera, args.width, args.height)
     if cap is None:
         print_camera_error(args.camera)

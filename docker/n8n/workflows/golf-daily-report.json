@@ -1,0 +1,131 @@
+{
+  "id": "golfDailyReport1",
+  "name": "Golf Daily Report (AI)",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Bangkok"
+  },
+  "nodes": [
+    {
+      "id": "9a1f0c3e-0001-4e5b-9c11-000000000001",
+      "name": "ทุกวัน 18:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 18 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "9a1f0c3e-0002-4e5b-9c11-000000000002",
+      "name": "กดทดสอบเอง",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "9a1f0c3e-0003-4e5b-9c11-000000000003",
+      "name": "6. ดึงสถิติจาก InfluxDB",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// 6. ดึงสถิติย้อนหลัง 24 ชม. จาก InfluxDB (Flux query) แล้วสรุปเป็นตัวเลข\nconst url = `${$env.INFLUX_URL}/api/v2/query?org=${encodeURIComponent($env.INFLUX_ORG)}`;\nconst bucket = $env.INFLUX_BUCKET;\n\nasync function flux(query) {\n  const csv = await this.helpers.httpRequest({\n    method: 'POST', url, body: query, json: false,\n    headers: {\n      Authorization: `Token ${$env.INFLUX_TOKEN}`,\n      'Content-Type': 'application/vnd.flux',\n      Accept: 'application/csv',\n    },\n  });\n  return parseCsv(String(csv));\n}\n\n// InfluxDB ตอบเป็น annotated CSV: หลายตารางคั่นด้วยบรรทัดว่าง แต่ละตารางมีหัวคอลัมน์ของตัวเอง\nfunction parseCsv(text) {\n  const rows = [];\n  let header = null;\n  for (const raw of text.split(/\\r?\\n/)) {\n    if (!raw.trim()) { header = null; continue; }\n    const cells = splitLine(raw);\n    if (!header) { header = cells; continue; }\n    const row = {};\n    header.forEach((h, i) => { row[h] = cells[i]; });\n    rows.push(row);\n  }\n  return rows;\n}\n\nfunction splitLine(line) {\n  const out = []; let cur = ''; let quoted = false;\n  for (let i = 0; i < line.length; i++) {\n    const ch = line[i];\n    if (quoted) {\n      if (ch === '\"' && line[i + 1] === '\"') { cur += '\"'; i++; }\n      else if (ch === '\"') quoted = false;\n      else cur += ch;\n    } else if (ch === '\"') quoted = true;\n    else if (ch === ',') { out.push(cur); cur = ''; }\n    else cur += ch;\n  }\n  out.push(cur);\n  return out;\n}\n\nconst base = `from(bucket: \"${bucket}\") |> range(start: -24h)`;\n\nconst sums = await flux.call(this, `${base}\n  |> filter(fn: (r) => r._measurement == \"golf_event\")\n  |> filter(fn: (r) => r._field == \"golf_count\" or r._field == \"reject_count\" or r._field == \"white\" or r._field == \"neon\" or r._field == \"pink\")\n  |> group(columns: [\"_field\"]) |> sum()`);\n\nconst counts = await flux.call(this, `${base}\n  |> filter(fn: (r) => r._measurement == \"golf_event\" and r._field == \"golf_count\")\n  |> group(columns: [\"kind\"]) |> count()`);\n\nconst status = await flux.call(this, `${base}\n  |> filter(fn: (r) => r._measurement == \"golf_status\" and (r._field == \"golf_count\" or r._field == \"fps\"))\n  |> group(columns: [\"_field\"])\n  |> reduce(identity: {n: 0, mx: 0.0, total: 0.0},\n            fn: (r, accumulator) => ({n: accumulator.n + 1,\n                                      mx: if float(v: r._value) > accumulator.mx then float(v: r._value) else accumulator.mx,\n                                      total: accumulator.total + float(v: r._value)}))`);\n\nconst recent = await flux.call(this, `${base}\n  |> filter(fn: (r) => r._measurement == \"golf_event\" and r._field == \"message\" and r.kind != \"golf\")\n  |> group() |> sort(columns: [\"_time\"], desc: true) |> limit(n: 10)`);\n\nconst sum = f => Number((sums.find(r => r._field === f) || {})._value || 0);\nconst events = {};\nfor (const r of counts) events[r.kind] = Number(r._value);\nconst st = f => status.find(r => r._field === f) || {};\n\nconst stats = {\n  date: new Date().toLocaleDateString('th-TH', { timeZone: $env.TZ || 'Asia/Bangkok', dateStyle: 'long' }),\n  events_total: Object.values(events).reduce((a, b) => a + b, 0),\n  events_golf_only: events.golf || 0,\n  events_reject: events.reject || 0,\n  events_mixed: events.mixed || 0,\n  golf_seen: sum('golf_count'),\n  white: sum('white'), neon: sum('neon'), pink: sum('pink'),\n  rejects_seen: sum('reject_count'),\n  max_golf_at_once: Number(st('golf_count').mx || 0),\n  camera_online_minutes: Math.round(Number(st('golf_count').n || 0) / 60),\n  avg_fps: st('fps').n ? Math.round(10 * st('fps').total / st('fps').n) / 10 : 0,\n  // เวลาจาก InfluxDB เป็น UTC เสมอ ต้องแปลงเป็นเวลาไทยก่อนแสดง\n  recent_rejects: recent.map(r => `${new Date(r._time).toLocaleTimeString('th-TH', { timeZone: $env.TZ || 'Asia/Bangkok', hour12: false })} ${r._value}`),\n};\nreturn [{ json: stats }];"
+      }
+    },
+    {
+      "id": "9a1f0c3e-0004-4e5b-9c11-000000000004",
+      "name": "AI สรุปรายงาน",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// AI สรุปรายงานประจำวัน\n//   มี GEMINI_API_KEY    -> ใช้ Google Gemini\n//   มี ANTHROPIC_API_KEY -> ใช้ Claude\n//   ไม่มีทั้งคู่          -> สรุปแบบตัวเลขธรรมดา (ระบบยังทำงานได้)\nconst s = $input.first().json;\n\nconst plain = [\n  `📊 รายงานระบบคัดแยกลูกกอล์ฟ ${s.date}`,\n  `กล้องออนไลน์ ~${s.camera_online_minutes} นาที (FPS เฉลี่ย ${s.avg_fps})`,\n  `เหตุการณ์ทั้งหมด ${s.events_total} ครั้ง: ปกติ ${s.events_golf_only} / แปลกปลอม ${s.events_reject} / ปนกัน ${s.events_mixed}`,\n  `ลูกกอล์ฟที่ตรวจพบ ${s.golf_seen} ครั้ง (ขาว ${s.white} / นีออน ${s.neon} / ชมพู ${s.pink})`,\n  `สิ่งแปลกปลอมที่ถูกปฏิเสธ ${s.rejects_seen} ชิ้น  |  เห็นพร้อมกันมากสุด ${s.max_golf_at_once} ลูก`,\n  s.recent_rejects.length ? `ล่าสุด:\\n- ${s.recent_rejects.slice(0, 5).join('\\n- ')}` : 'ไม่พบสิ่งแปลกปลอมใน 24 ชม.',\n].join('\\n');\n\nconst system = 'คุณเป็นวิศวกรควบคุมคุณภาพในสายการผลิตที่ใช้กล้องคัดแยกลูกกอล์ฟ ' +\n  'เขียนรายงานประจำวันภาษาไทยสั้น กระชับ สำหรับส่งทาง Telegram ' +\n  '(ไม่เกิน 12 บรรทัด ใช้อีโมจิได้เล็กน้อย เป็นข้อความธรรมดา ห้ามใช้ Markdown เช่น ** # หรือตาราง) ' +\n  'สรุปตัวเลขสำคัญ ชี้จุดผิดปกติ และแนะนำสิ่งที่ควรทำต่อ 1-2 ข้อ ' +\n  'ห้ามแต่งตัวเลขที่ไม่มีในข้อมูล';\nconst prompt = `ข้อมูลสถิติ 24 ชั่วโมงล่าสุด (JSON):\\n${JSON.stringify(s, null, 2)}`;\n\n// Code node ของ n8n ส่ง error ออกมาแค่ข้อความ \"Request failed with status code 404\"\n// จึงต้องแกะรหัสจากข้อความด้วย ไม่ใช่ดูแค่ฟิลด์ตัวเลข\nconst httpStatus = err => String(err.httpCode || err.statusCode || (err.response && err.response.status) ||\n  ((String(err.message).match(/status code (\\d{3})/) || [])[1]) || '');\n\n// ---------- Google Gemini ----------\nasync function askGemini(helpers) {\n  const key = $env.GEMINI_API_KEY;\n  const base = 'https://generativelanguage.googleapis.com/v1beta';\n  const body = {\n    system_instruction: { parts: [{ text: system }] },\n    contents: [{ role: 'user', parts: [{ text: prompt }] }],\n    generationConfig: { maxOutputTokens: 4096 },\n  };\n  // ตั้งเวลาหมดไว้ด้วย - ทดสอบ 28 ต.ค. 2026 รุ่น gemini-3.8-flash / gemini-flash-latest ค้างเกิน 60 วินาที\n  const call = model => helpers.httpRequest({\n    method: 'POST', url: `${base}/models/${model}:generateContent`,\n    headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },\n    body, json: true, timeout: 45000,\n  });\n\n  // รุ่นสำรองเผื่อรุ่นใน .env เลิกให้บริการ (404) / ค้าง / ล่ม:\n  // ถาม Google ว่ามี gemini-X.Y-flash อะไรบ้าง เรียงเลขรุ่นจากสูงไปต่ำ (ไม่เอา lite / preview / tts / image)\n  async function backupModels() {\n    const list = await helpers.httpRequest({\n      method: 'GET', url: `${base}/models?pageSize=200`, headers: { 'x-goog-api-key': key }, json: true,\n    });\n    const ver = n => (n.match(/^gemini-(\\d+(?:\\.\\d+)?)-flash$/) || [])[1];\n    return (list.models || [])\n      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))\n      .map(m => m.name.replace(/^models\\//, ''))\n      .filter(ver)\n      .sort((a, b) => parseFloat(ver(b)) - parseFloat(ver(a)));\n  }\n\n  const first = ($env.GEMINI_MODEL || 'gemini-3.5-flash').replace(/^models\\//, '');\n  const tried = [];\n  let candidates = [first];\n  let lastErr;\n  while (candidates.length && tried.length < 3) {\n    const model = candidates.shift();\n    if (tried.includes(model)) continue;\n    tried.push(model);\n    try {\n      const res = await call(model);\n      const cand = (res.candidates || [])[0];\n      const text = cand && cand.content ? (cand.content.parts || []).map(p => p.text || '').join('').trim() : '';\n      const blocked = (res.promptFeedback && res.promptFeedback.blockReason) || (cand && cand.finishReason === 'SAFETY');\n      return { text: blocked ? '' : text, model, why: blocked ? 'blocked' : (cand && cand.finishReason) };\n    } catch (err) {\n      lastErr = err;\n      // key ผิด / ไม่มีสิทธิ์ / โควตาหมด -> เปลี่ยนรุ่นก็ไม่ช่วย หยุดเลย\n      if (['400', '401', '403', '429'].includes(httpStatus(err))) throw err;\n      if (tried.length === 1) candidates = await backupModels().catch(() => []);\n    }\n  }\n  lastErr.message = `ลองแล้ว ${tried.join(', ')}: ${lastErr.message}`;\n  throw lastErr;\n}\n\n// ---------- Claude ----------\nasync function askClaude(helpers) {\n  const model = $env.AI_MODEL || 'claude-opus-5-5';\n  const body = {\n    model, max_tokens: 4000, output_config: { effort: 'low' }, system,\n    messages: [{ role: 'user', content: prompt }],\n  };\n  const headers = {\n    'x-api-key': $env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json',\n  };\n  // ถ้าโมเดลหลักปฏิเสธคำขอ ให้ API สลับไปใช้โมเดลสำรองให้เองในคำขอเดียวกัน\n  if (/^claude-(opus-5|fable-5|sonnet-5-5)/.test(model)) {\n    body.fallbacks = 'default';\n    headers['anthropic-beta'] = 'server-side-fallback-2026-07-01';\n  }\n  const res = await helpers.httpRequest({\n    method: 'POST', url: 'https://api.anthropic.com/v1/messages', headers, body, json: true,\n  });\n  const text = (res.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim();\n  return { text: res.stop_reason === 'refusal' ? '' : text, model: res.model, why: res.stop_reason };\n}\n\nconst provider = $env.GEMINI_API_KEY ? 'gemini' : ($env.ANTHROPIC_API_KEY ? 'claude' : null);\nif (!provider) {\n  return [{ json: { report: plain, ai: false, note: 'ไม่ได้ตั้ง GEMINI_API_KEY / ANTHROPIC_API_KEY จึงส่งสรุปแบบไม่ใช้ AI' } }];\n}\n\ntry {\n  const r = provider === 'gemini' ? await askGemini(this.helpers) : await askClaude(this.helpers);\n  if (!r.text) {\n    return [{ json: { report: plain, ai: false, note: `${provider} ไม่ตอบ (${r.why})` } }];\n  }\n  // Telegram ส่งแบบข้อความธรรมดา เครื่องหมาย Markdown จะโผล่ให้เห็นตรง ๆ จึงตัดทิ้งเผื่อ AI ไม่ทำตามคำสั่ง\n  const clean = r.text.replace(/\\*\\*(.+?)\\*\\*/g, '$1').replace(/^#+\\s*/gm, '');\n  return [{ json: { report: `🤖 ${clean}`, ai: true, provider, model: r.model } }];\n} catch (err) {\n  // API ล่ม / key ผิด / เน็ตหลุด -> ยังส่งรายงานแบบธรรมดาได้\n  return [{ json: { report: plain, ai: false, note: `เรียก ${provider} ไม่สำเร็จ (${httpStatus(err) || '-'}): ${err.message}` } }];\n}"
+      }
+    },
+    {
+      "id": "9a1f0c3e-0005-4e5b-9c11-000000000005",
+      "name": "7. ส่งรายงาน Telegram",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// 7. ส่งรายงานสรุปประจำวันไปที่ Telegram\nconst { report, note } = $input.first().json;\nconst token = $env.TELEGRAM_TOKEN;\nconst chatId = $env.TELEGRAM_CHAT_ID;\nif (!token || !chatId) {\n  return [{ json: { sent: false, reason: 'ยังไม่ได้ตั้ง TELEGRAM_TOKEN / TELEGRAM_CHAT_ID ใน .env', report, note } }];\n}\nconst res = await this.helpers.httpRequest({\n  method: 'POST',\n  url: `https://api.telegram.org/bot${token}/sendMessage`,\n  body: { chat_id: chatId, text: report },\n  json: true,\n});\nreturn [{ json: { sent: res.ok === true, message_id: res.result && res.result.message_id, report, note } }];"
+      }
+    }
+  ],
+  "connections": {
+    "ทุกวัน 18:00": {
+      "main": [
+        [
+          {
+            "node": "6. ดึงสถิติจาก InfluxDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "กดทดสอบเอง": {
+      "main": [
+        [
+          {
+            "node": "6. ดึงสถิติจาก InfluxDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. ดึงสถิติจาก InfluxDB": {
+      "main": [
+        [
+          {
+            "node": "AI สรุปรายงาน",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI สรุปรายงาน": {
+      "main": [
+        [
+          {
+            "node": "7. ส่งรายงาน Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}

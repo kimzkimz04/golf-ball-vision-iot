@@ -1,0 +1,151 @@
+# Golf Ball Vision - IoT Stack (ขั้นที่ 2-4 ในโฟลว์)
+#
+#   docker compose up -d                    เปิดทั้งระบบ (ยกเว้น OpenCV container)
+#   docker compose --profile vision up -d   เปิดรวม OpenCV container ด้วย
+#   docker compose ps                       ดูสถานะ
+#   docker compose logs -f nodered          ดู log ของ service
+#   docker compose down                     ปิดทั้งหมด (ข้อมูลยังอยู่ใน volume)
+#
+# ค่ารหัสผ่าน / token ทั้งหมดอยู่ในไฟล์ .env (คัดลอกจาก .env.example)
+#
+# พอร์ตที่เปิดบนเครื่อง:
+#   1883  Mosquitto MQTT        8086  InfluxDB
+#   1880  Node-RED              3000  Grafana
+#   5678  n8n
+
+name: golf-iot
+
+services:
+  # 2. Mosquitto MQTT Broker - topic golf/vision/result
+  mosquitto:
+    image: eclipse-mosquitto:2.0.20
+    container_name: golf-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto/config:/mosquitto/config:ro
+      - mosquitto-data:/mosquitto/data
+
+  # 3. Node-RED - Central Flow Controller (รับ MQTT แล้วกระจายไป 4a/4b/4c)
+  nodered:
+    image: nodered/node-red:4.0.9
+    container_name: golf-nodered
+    restart: unless-stopped
+    depends_on: [mosquitto, influxdb]
+    ports:
+      - "1880:1880"
+    environment:
+      TZ: ${TIMEZONE}
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_ORG: ${INFLUX_ORG}
+      INFLUX_BUCKET: ${INFLUX_BUCKET}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      GSHEET_URL: ${GSHEET_URL}
+      ALERT_COOLDOWN_SEC: ${ALERT_COOLDOWN_SEC}
+      GSHEET_BATCH_SEC: ${GSHEET_BATCH_SEC}
+    volumes:
+      # flows.json อยู่ในโฟลเดอร์นี้ แก้ใน Node-RED แล้วกด Deploy ไฟล์จะถูกเขียนทับให้
+      - ./docker/nodered:/data
+
+  # 5. InfluxDB - เก็บข้อมูล Time-series
+  influxdb:
+    image: influxdb:2.7
+    container_name: golf-influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUX_USER}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUX_PASSWORD}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUX_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUX_BUCKET}
+      DOCKER_INFLUXDB_INIT_RETENTION: 30d
+      # token เดียวกันนี้ถูกส่งให้ Node-RED / Grafana / n8n ไม่ต้องไปก๊อปจากหน้าเว็บ
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_TOKEN}
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+
+  # 5a. Grafana Dashboard - กราฟ Real-time (datasource + dashboard ตั้งค่าให้อัตโนมัติ)
+  grafana:
+    image: grafana/grafana:12.0.0
+    container_name: golf-grafana
+    restart: unless-stopped
+    depends_on: [influxdb]
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: ${TIMEZONE}
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_DEFAULT_THEME: dark
+      INFLUX_ORG: ${INFLUX_ORG}
+      INFLUX_BUCKET: ${INFLUX_BUCKET}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+
+  # 4/6/7. n8n Automation - ดึงสถิติตามเวลา -> AI สรุป -> ส่งรายงาน Telegram
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: golf-n8n
+    restart: unless-stopped
+    depends_on: [influxdb]
+    ports:
+      - "5678:5678"
+    environment:
+      TZ: ${TIMEZONE}
+      GENERIC_TIMEZONE: ${TIMEZONE}
+      # เข้าผ่าน http://<ZeroTier IP>:5678 ได้ (ไม่มี https จึงต้องปิด secure cookie)
+      N8N_SECURE_COOKIE: "false"
+      # ให้ Code node อ่านค่าจาก $env ได้ (token ต่าง ๆ ด้านล่าง)
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_ORG: ${INFLUX_ORG}
+      INFLUX_BUCKET: ${INFLUX_BUCKET}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      AI_MODEL: ${AI_MODEL}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL}
+    volumes:
+      - n8n-data:/home/node/.n8n
+      - ./docker/n8n/workflows:/workflows:ro
+
+  # 2. OpenCV Container - ตรวจจับรูปทรง/สีลูกกอล์ฟ แบบไม่มีหน้าต่าง
+  # Docker บน Windows มองไม่เห็นกล้อง USB จึงดึงภาพจาก camera_stream.py แทน
+  #   OPENCV_SOURCE=http://host.docker.internal:8090/video  (กล้องจริง)
+  #   OPENCV_SOURCE=samples                                 (รีเพลย์ภาพตัวอย่าง 28 รูป - ค่าเริ่มต้น)
+  opencv:
+    build: .
+    image: golf-opencv:latest
+    container_name: golf-opencv
+    profiles: ["vision"]
+    restart: unless-stopped
+    depends_on: [mosquitto]
+    environment:
+      TZ: ${TIMEZONE}
+      MQTT_HOST: mosquitto
+      DEVICE_ID: ${OPENCV_DEVICE_ID}
+      CAPTURE_DIR: /app/output/snapshots
+      CAPTURE_CSV: /app/output/detections.csv
+    command: ["python", "-u", "ball_detect.py", "--headless", "--source", "${OPENCV_SOURCE}"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./output/docker:/app/output
+
+volumes:
+  mosquitto-data:
+  influxdb-data:
+  influxdb-config:
+  grafana-data:
+  n8n-data:

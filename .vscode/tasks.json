@@ -1,0 +1,49 @@
+{
+  // Ctrl+Shift+P -> "Tasks: Run Task" แล้วเลือกจากรายการ
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Docker: เปิดระบบ IoT (compose up)",
+      "type": "shell",
+      "command": "docker compose up -d; docker compose ps",
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: เปิดระบบ + OpenCV container",
+      "type": "shell",
+      "command": "docker compose --profile vision up -d --build; docker compose --profile vision ps",
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: ดูสถานะ",
+      "type": "shell",
+      "command": "docker compose --profile vision ps",
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: ดู log ทั้งหมด",
+      "type": "shell",
+      "command": "docker compose --profile vision logs -f --tail 50",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: ปิดระบบ (compose down)",
+      "type": "shell",
+      "command": "docker compose --profile vision down",
+      "problemMatcher": []
+    },
+    {
+      "label": "n8n: นำเข้า workflow รายงานประจำวัน",
+      "type": "shell",
+      "command": "docker compose exec n8n n8n import:workflow --input=/workflows/golf-daily-report.json",
+      "problemMatcher": []
+    },
+    {
+      "label": "Python: ติดตั้ง library (.venv)",
+      "type": "shell",
+      "command": "if (-not (Test-Path .venv\\Scripts\\python.exe)) { python -m venv .venv }; .venv\\Scripts\\python.exe -m pip install -r requirements.txt",
+      "problemMatcher": []
+    }
+  ]
+}

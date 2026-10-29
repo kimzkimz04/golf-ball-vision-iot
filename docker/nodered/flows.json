@@ -1,0 +1,385 @@
+[
+  {
+    "id": "golf_tab",
+    "type": "tab",
+    "label": "Golf Vision IoT",
+    "disabled": false,
+    "info": "รับผลตรวจจับจาก OpenCV ผ่าน MQTT แล้วกระจายไป InfluxDB / Telegram / Google Sheets\nค่า token ทั้งหมดอ่านจาก environment ที่ส่งมาจากไฟล์ .env"
+  },
+  {
+    "id": "broker_local",
+    "type": "mqtt-broker",
+    "name": "Mosquitto (docker)",
+    "broker": "mosquitto",
+    "port": "1883",
+    "clientid": "nodered-golf",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "autoUnsubscribe": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthRetain": "false",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closeRetain": "false",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willRetain": "false",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "c_title",
+    "type": "comment",
+    "z": "golf_tab",
+    "name": "3. Subscribe golf/vision/result -> แยก status / event",
+    "info": "status = สรุปทุก 1 วินาที, event = ตอนกล้องบันทึกภาพเหตุการณ์",
+    "x": 230,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "mqtt_result",
+    "type": "mqtt in",
+    "z": "golf_tab",
+    "name": "golf/vision/result",
+    "topic": "golf/vision/result",
+    "qos": "1",
+    "datatype": "json",
+    "broker": "broker_local",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 140,
+    "y": 120,
+    "wires": [
+      [
+        "route",
+        "dbg_raw"
+      ]
+    ]
+  },
+  {
+    "id": "dbg_raw",
+    "type": "debug",
+    "z": "golf_tab",
+    "name": "ข้อความดิบ (เปิดเมื่ออยากดู)",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 400,
+    "y": 60,
+    "wires": []
+  },
+  {
+    "id": "route",
+    "type": "function",
+    "z": "golf_tab",
+    "name": "แยกประเภทข้อความ",
+    "func": "// แยกข้อความตามชนิด: status (รายวินาที) -> ช่อง 1, event (เหตุการณ์) -> ช่อง 2\nconst p = msg.payload;\nif (typeof p !== 'object' || !p.type) {\n    node.warn('ได้ข้อความที่ไม่ใช่ JSON ของโปรเจกต์: ' + JSON.stringify(p));\n    return null;\n}\nnode.status({fill: 'green', shape: 'dot', text: p.type + ' ' + (p.time || '')});\nif (p.type === 'status') return [msg, null];\nif (p.type === 'event') return [null, msg];\nreturn null;",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 120,
+    "wires": [
+      [
+        "to_influx"
+      ],
+      [
+        "to_influx",
+        "alert",
+        "batch"
+      ]
+    ]
+  },
+  {
+    "id": "c_4a",
+    "type": "comment",
+    "z": "golf_tab",
+    "name": "4a. บันทึกค่ารายวินาที -> InfluxDB",
+    "info": "",
+    "x": 640,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "to_influx",
+    "type": "function",
+    "z": "golf_tab",
+    "name": "แปลงเป็น Line Protocol",
+    "func": "// 4a. แปลง JSON เป็น InfluxDB Line Protocol แล้วยิง HTTP เข้า /api/v2/write\n// status -> measurement golf_status (ทุกวินาที), event -> golf_event\nconst p = msg.payload;\nconst tag = v => String(v).replace(/[ ,=]/g, '\\\\$&');\nconst str = v => '\"' + String(v).replace(/\\\\/g, '\\\\\\\\').replace(/\"/g, '\\\\\"') + '\"';\nconst c = p.colors || {};\nconst colorFields = `white=${c.White || 0}i,neon=${c.Neon || 0}i,pink=${c.Pink || 0}i`;\n\nlet line;\nif (p.type === 'status') {\n    line = `golf_status,device=${tag(p.device)} golf_count=${p.golf_count}i,` +\n           `reject_count=${p.reject_count}i,${colorFields},fps=${Number(p.fps) || 0},` +\n           `frames=${p.frames || 0}i ${p.ts}`;\n} else {\n    line = `golf_event,device=${tag(p.device)},kind=${tag(p.kind)} golf_count=${p.golf_count}i,` +\n           `reject_count=${p.reject_count}i,${colorFields},message=${str(p.message || '')},` +\n           `image=${str(p.image || '')} ${p.ts}`;\n}\n\nconst base = env.get('INFLUX_URL') || 'http://influxdb:8086';\nmsg.method = 'POST';\nmsg.url = `${base}/api/v2/write?org=${encodeURIComponent(env.get('INFLUX_ORG'))}` +\n          `&bucket=${encodeURIComponent(env.get('INFLUX_BUCKET'))}&precision=ms`;\nmsg.headers = {\n    'Authorization': 'Token ' + env.get('INFLUX_TOKEN'),\n    'Content-Type': 'text/plain; charset=utf-8'\n};\nmsg.payload = line;\nmsg.target = 'InfluxDB';\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 640,
+    "y": 120,
+    "wires": [
+      [
+        "http_influx"
+      ]
+    ]
+  },
+  {
+    "id": "http_influx",
+    "type": "http request",
+    "z": "golf_tab",
+    "name": "เขียน InfluxDB",
+    "method": "use",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 870,
+    "y": 120,
+    "wires": [
+      [
+        "check"
+      ]
+    ]
+  },
+  {
+    "id": "c_4c",
+    "type": "comment",
+    "z": "golf_tab",
+    "name": "4c. แจ้งเตือน: ไม่ใช่ลูกกอล์ฟ -> Telegram",
+    "info": "",
+    "x": 660,
+    "y": 180,
+    "wires": []
+  },
+  {
+    "id": "alert",
+    "type": "function",
+    "z": "golf_tab",
+    "name": "ตรวจสิ่งแปลกปลอม",
+    "func": "// 4c. แจ้งเตือน Telegram เมื่อเจอ \"สิ่งที่ไม่ใช่ลูกกอล์ฟ\"\n// กันสแปม: เรื่องเดิม (สาเหตุชุดเดิม) แจ้งซ้ำได้ไม่ถี่กว่า ALERT_COOLDOWN_SEC วินาที\nconst p = msg.payload;\nif (!p.reject_count) return null;\n\nconst token = env.get('TELEGRAM_TOKEN');\nconst chatId = env.get('TELEGRAM_CHAT_ID');\nif (!token || !chatId) {\n    node.status({fill: 'yellow', shape: 'ring', text: 'ยังไม่ได้ตั้ง TELEGRAM_TOKEN/CHAT_ID ใน .env'});\n    return null;\n}\n\nconst cooldown = Number(env.get('ALERT_COOLDOWN_SEC') || 30) * 1000;\nconst reasons = (p.rejects || []).map(r => r.reason).sort().join(', ');\nconst last = context.get('last') || {};\nif (last.reasons === reasons && Date.now() - last.at < cooldown) {\n    node.status({fill: 'grey', shape: 'ring', text: 'ข้าม (cooldown): ' + reasons});\n    return null;\n}\ncontext.set('last', {reasons: reasons, at: Date.now()});\n\nconst golfLine = p.golf_count\n    ? `ลูกกอล์ฟปกติ ${p.golf_count} ลูก (ขาว ${p.colors.White} / นีออน ${p.colors.Neon} / ชมพู ${p.colors.Pink})`\n    : 'ไม่มีลูกกอล์ฟในภาพ';\nconst text = `⚠️ พบวัตถุแปลกปลอม ${p.reject_count} ชิ้น\\n` +\n             `สาเหตุ: ${reasons}\\n${golfLine}\\n` +\n             `กล้อง: ${p.device}  เวลา: ${p.time}\\nภาพ: ${p.image || '-'}`;\n\nmsg.method = 'POST';\nmsg.url = `https://api.telegram.org/bot${token}/sendMessage`;\nmsg.headers = {'Content-Type': 'application/json'};\nmsg.payload = {chat_id: chatId, text: text};\nmsg.target = 'Telegram';\nnode.status({fill: 'red', shape: 'dot', text: 'แจ้งเตือน: ' + reasons});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 640,
+    "y": 220,
+    "wires": [
+      [
+        "http_tg"
+      ]
+    ]
+  },
+  {
+    "id": "http_tg",
+    "type": "http request",
+    "z": "golf_tab",
+    "name": "Telegram sendMessage",
+    "method": "use",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 880,
+    "y": 220,
+    "wires": [
+      [
+        "check"
+      ]
+    ]
+  },
+  {
+    "id": "c_4b",
+    "type": "comment",
+    "z": "golf_tab",
+    "name": "4b. รวบรวมข้อมูลส่งเป็นชุด -> Google Sheets",
+    "info": "",
+    "x": 670,
+    "y": 280,
+    "wires": []
+  },
+  {
+    "id": "flush_timer",
+    "type": "inject",
+    "z": "golf_tab",
+    "name": "จับเวลาส่งชุด (GSHEET_BATCH_SEC)",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "${GSHEET_BATCH_SEC}",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "1",
+    "topic": "flush",
+    "x": 400,
+    "y": 360,
+    "wires": [
+      [
+        "batch"
+      ]
+    ]
+  },
+  {
+    "id": "batch",
+    "type": "function",
+    "z": "golf_tab",
+    "name": "รวบรวมเป็นชุด",
+    "func": "// 4b. รวบรวมเหตุการณ์ไว้ในบัฟเฟอร์ แล้วส่งไป Google Sheets ทีละชุด (Batch)\n// ส่งเมื่อ: inject จับเวลาครบรอบ (topic = flush) หรือบัฟเฟอร์เต็ม 50 แถว\nconst MAX_ROWS = 50;\nlet buffer = flow.get('gsheetBuffer') || [];\n\nif (msg.topic !== 'flush') {\n    const p = msg.payload;\n    buffer.push([\n        p.time, p.device, p.kind, p.golf_count, p.reject_count,\n        p.colors.White, p.colors.Neon, p.colors.Pink,\n        (p.rejects || []).map(r => r.reason).join(', '),\n        p.message, p.image || ''\n    ]);\n    flow.set('gsheetBuffer', buffer);\n    node.status({fill: 'blue', shape: 'ring', text: `รอส่ง ${buffer.length} แถว`});\n    if (buffer.length < MAX_ROWS) return null;\n}\n\nif (buffer.length === 0) return null;\n\nconst url = env.get('GSHEET_URL');\nif (!url) {\n    node.status({fill: 'yellow', shape: 'ring', text: `ยังไม่ได้ตั้ง GSHEET_URL (ค้าง ${buffer.length} แถว)`});\n    if (buffer.length > 1000) flow.set('gsheetBuffer', buffer.slice(-1000));\n    return null;\n}\n\nflow.set('gsheetBuffer', []);\nnode.status({fill: 'green', shape: 'dot', text: `ส่ง ${buffer.length} แถว`});\nmsg.method = 'POST';\nmsg.url = url;\nmsg.headers = {'Content-Type': 'application/json'};\nmsg.payload = {sheet: 'detections', rows: buffer};\n// Apps Script บันทึกข้อมูลตอนรับ POST แล้วตอบกลับด้วย 302 ไปอีกโดเมน\n// ถ้าให้ตาม redirect ไป บางครั้งได้ 405 กลับมา ทั้งที่ข้อมูลเข้า Sheet แล้ว - ไม่ต้องตาม\nmsg.followRedirects = false;\nmsg.target = 'Google Sheets';\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 640,
+    "y": 320,
+    "wires": [
+      [
+        "http_gs"
+      ]
+    ]
+  },
+  {
+    "id": "http_gs",
+    "type": "http request",
+    "z": "golf_tab",
+    "name": "Google Apps Script",
+    "method": "use",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 870,
+    "y": 320,
+    "wires": [
+      [
+        "check"
+      ]
+    ]
+  },
+  {
+    "id": "check",
+    "type": "function",
+    "z": "golf_tab",
+    "name": "เช็คผลลัพธ์ HTTP",
+    "func": "// ตรวจผลตอบกลับของ HTTP ทุกปลายทาง แสดงสถานะบนโหนด และเตือนเมื่อพัง\nconst ok = msg.statusCode >= 200 && msg.statusCode < 400;\nconst stats = context.get('stats') || {};\nconst s = stats[msg.target] || {ok: 0, fail: 0};\nok ? s.ok++ : s.fail++;\nstats[msg.target] = s;\ncontext.set('stats', stats);\n\nnode.status({\n    fill: ok ? 'green' : 'red', shape: 'dot',\n    text: Object.entries(stats).map(([k, v]) => `${k} ✓${v.ok} ✗${v.fail}`).join('  ')\n});\nif (!ok) {\n    node.warn(`${msg.target} ตอบกลับ ${msg.statusCode}: ` +\n              (typeof msg.payload === 'string' ? msg.payload : JSON.stringify(msg.payload)).slice(0, 300));\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1110,
+    "y": 220,
+    "wires": [
+      [
+        "dbg_err"
+      ]
+    ]
+  },
+  {
+    "id": "dbg_err",
+    "type": "debug",
+    "z": "golf_tab",
+    "name": "HTTP ที่ล้มเหลว",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1330,
+    "y": 220,
+    "wires": []
+  },
+  {
+    "id": "c_status",
+    "type": "comment",
+    "z": "golf_tab",
+    "name": "สถานะกล้อง online / offline (retain)",
+    "info": "",
+    "x": 180,
+    "y": 440,
+    "wires": []
+  },
+  {
+    "id": "mqtt_status",
+    "type": "mqtt in",
+    "z": "golf_tab",
+    "name": "golf/vision/status",
+    "topic": "golf/vision/status",
+    "qos": "1",
+    "datatype": "json",
+    "broker": "broker_local",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 140,
+    "y": 480,
+    "wires": [
+      [
+        "dbg_status"
+      ]
+    ]
+  },
+  {
+    "id": "dbg_status",
+    "type": "debug",
+    "z": "golf_tab",
+    "name": "สถานะกล้อง",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 380,
+    "y": 480,
+    "wires": []
+  }
+]

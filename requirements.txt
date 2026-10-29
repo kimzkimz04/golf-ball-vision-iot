@@ -2,3 +2,9 @@
 # หมายเหตุ: OpenCV 5 ต่างจาก 4 ตรงที่ getWindowProperty จะ throw error
 # เมื่อหน้าต่างถูกปิดแล้ว (โค้ดดักไว้ใน utils/draw.py:window_closed)
 opencv-python==5.0.0.93
+
+# ส่งผลการตรวจจับไปที่ Mosquitto (Phase 7: IoT)
+paho-mqtt==2.1.0
+
+# อ่านชื่อกล้องบน Windows เพื่อเลือกกล้องจาก CAMERA_NAME แทนเลข index (ดู utils/camera.py)
+pygrabber==0.2; sys_platform == "win32"

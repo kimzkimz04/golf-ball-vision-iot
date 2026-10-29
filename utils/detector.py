@@ -24,6 +24,19 @@ def preprocess(frame, blur_kernel: int = 9):
     return gray
 
 
+def preprocess_saturation(frame, blur_kernel: int = 9):
+    """ดึงช่องความอิ่มตัวของสี (S ใน HSV) ออกมาเป็นภาพขาวดำ แล้วเบลอแบบเดียวกัน
+
+    ทำไมต้องมี: บนโต๊ะไม้ ลูกชมพูกับเนื้อไม้ "สว่างเท่ากันเป๊ะ" ในภาพขาวดำ
+    (วัดได้ 148 กับ 147) ขอบลูกจึงแทบหายไปทั้งลูก แต่ในช่อง S ลูกชมพูได้ 164
+    ส่วนไม้ได้แค่ 40 ขอบชัดมาก ใช้หาวงกลมคู่กับภาพขาวดำแล้วรวมผลกัน
+    """
+    s = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)[:, :, 1]
+    if blur_kernel >= 3:
+        s = cv2.medianBlur(s, blur_kernel | 1)
+    return s
+
+
 def find_circles(gray, dp=1.2, min_dist=60, param1=100, param2=40,
                  min_radius=10, max_radius=150, method="classic"):
     """หาวงกลมในภาพขาวดำ คืนค่าเป็น list ของ (x, y, radius)
@@ -64,24 +77,38 @@ def draw_circles(frame, circles):
     return frame
 
 
-def edge_support(edges, x: int, y: int, r: int, samples: int = 72) -> float:
+def edge_support(edges, x: int, y: int, r: int, samples: int = 72,
+                 tolerance_ratio: float = 0.04) -> float:
     """วัดว่า "ขอบจริง" ในภาพรองรับวงกลมนี้มากแค่ไหน คืนค่า 0.0-1.0
 
     HoughCircles ตัดสินจากคะแนนสะสมในตาราง ซึ่งบางครั้งให้วงกลมที่ไม่มีอยู่จริง
     (เช่น วงยักษ์ที่คร่อมทั้งภาพ) วิธีเช็กคือเดินไปตามเส้นรอบวงแล้วนับว่า
     มีกี่จุดที่ตรงกับขอบจริงในภาพ ถ้าวงกลมจริง จะมีขอบรองรับเกือบทั้งวง
+
+    ยอมให้ขอบจริงคลาดจากเส้นรอบวงได้ตามสัดส่วนรัศมี (tolerance_ratio)
+    เพราะรัศมีที่ HoughCircles ให้มาคลาด 3-5% เสมอ วงเล็ก (r~27) คลาด 1 px
+    แต่พอกล้องเข้าใกล้ (r~105) คลาดได้ถึง 4-5 px ถ้าเช็กแค่ ±1 px
+    ลูกบอลจริงจะได้คะแนนต่ำจนถูกตัดทิ้ง (ลูกชมพูเหลือ 0.21-0.40)
     """
     theta = np.linspace(0, 2 * np.pi, samples, endpoint=False)
-    xs = np.round(x + r * np.cos(theta)).astype(int)
-    ys = np.round(y + r * np.sin(theta)).astype(int)
-
+    tol = max(1, int(round(r * tolerance_ratio)))
     h, w = edges.shape
-    inside = (xs >= 0) & (xs < w) & (ys >= 0) & (ys < h)
-    if not inside.any():
+
+    hit = np.zeros(samples, bool)
+    any_inside = False
+    for dr in range(-tol, tol + 1):
+        xs = np.round(x + (r + dr) * np.cos(theta)).astype(int)
+        ys = np.round(y + (r + dr) * np.sin(theta)).astype(int)
+        inside = (xs >= 0) & (xs < w) & (ys >= 0) & (ys < h)
+        if not inside.any():
+            continue
+        any_inside = True
+        hit[inside] |= edges[ys[inside], xs[inside]] > 0
+    if not any_inside:
         return 0.0
 
     # จุดที่ตกนอกภาพถือว่าไม่มีขอบรองรับ จึงหารด้วยจำนวนจุดทั้งหมด
-    return float(np.count_nonzero(edges[ys[inside], xs[inside]]) / samples)
+    return float(np.count_nonzero(hit) / samples)
 
 
 def suppress_overlaps(circles, overlap_ratio: float = 0.6):
@@ -104,13 +131,19 @@ def suppress_overlaps(circles, overlap_ratio: float = 0.6):
     return kept
 
 
-def verify_circles(gray, circles, param1: int = 100, min_support: float = 0.45):
+def verify_circles(images, circles, param1: int = 100, min_support: float = 0.45):
     """กรองวงกลมที่ HoughCircles หามาได้ ให้เหลือเฉพาะวงที่น่าเชื่อถือ
 
+    images = ภาพขาวดำ 1 ภาพ หรือ list ของหลายภาพ (เช่น [ขาวดำ, ช่อง S])
+             ถ้าส่งหลายภาพ ขอบจากทุกภาพจะถูกรวมกัน
     คืนค่าเป็น list ของ (x, y, radius, support) เรียงจากคะแนนมากไปน้อย
     """
+    if not isinstance(images, (list, tuple)):
+        images = [images]
     # ใช้ threshold ชุดเดียวกับที่ HoughCircles ใช้ภายใน จะได้ขอบชุดเดียวกัน
-    edges = cv2.Canny(gray, max(1, param1 // 2), max(2, param1))
+    edges = cv2.Canny(images[0], max(1, param1 // 2), max(2, param1))
+    for image in images[1:]:
+        edges |= cv2.Canny(image, max(1, param1 // 2), max(2, param1))
     # ขยายขอบเล็กน้อย เผื่อวงกลมที่คำนวณได้เพี้ยนไป 1-2 พิกเซล
     edges = cv2.dilate(edges, np.ones((3, 3), np.uint8))
 

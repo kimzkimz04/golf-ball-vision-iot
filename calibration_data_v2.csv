@@ -1,0 +1,117 @@
+เวลา,ของจริง,ผลตัดสิน,สี/เหตุผล,รัศมี,คะแนนพื้นผิว,ความหนาแน่นขอบ,จุดสะท้อนแสง,การกระจายความสว่าง,คะแนนขอบ,H,S,V,ไฟล์ภาพ
+2026-10-28 14:30:05,tape_ring,Not Golf Ball,wrong color: Unknown,101,12.3,0.0000,0.0000,10.1,1.00,25,10,124,snapshots/clean\20261028_080729_reject1_toobig.jpg
+2026-10-28 14:30:05,tape_ring,Not Golf Ball,wrong color: Unknown,100,7.8,0.0000,0.0000,15.2,0.72,20,15,110,snapshots/clean\20261028_080729_reject1_toobig_2.jpg
+2026-10-28 14:30:05,tape_ring,Not Golf Ball,wrong color: Unknown,98,8.9,0.0000,0.0000,11.8,0.68,20,11,111,snapshots/clean\20261028_080731_reject1_toobig.jpg
+2026-10-28 14:30:05,tape_ring,Not Golf Ball,wrong color: Unknown,106,9.2,0.0001,0.0000,14.3,0.75,20,15,106,snapshots/clean\20261028_080731_reject1_toobig_2.jpg
+2026-10-28 14:30:05,tape_ring,Not Golf Ball,wrong color: Unknown,107,9.4,0.0000,0.0000,13.4,0.74,19,14,106,snapshots/clean\20261028_080732_reject1_toobig.jpg
+2026-10-28 14:30:05,pingpong_orange,Not Golf Ball,too small,91,2.5,0.0000,0.0000,40.4,0.54,18,214,203,snapshots/clean\20261028_080735_reject1_toobig.jpg
+2026-10-28 14:30:05,pingpong_orange,Not Golf Ball,wrong color: Orange,108,3.1,0.0000,0.1244,40.6,0.58,17,242,216,snapshots/clean\20261028_080735_reject1_toobig_3.jpg
+2026-10-28 14:30:05,pingpong_orange,Not Golf Ball,wrong color: Orange,101,2.6,0.0000,0.0477,15.4,0.62,18,254,227,snapshots/clean\20261028_080736_reject1_toobig.jpg
+2026-10-28 14:30:05,pingpong_orange,Not Golf Ball,wrong color: Orange,97,2.4,0.0000,0.3109,17.3,0.89,18,242,232,snapshots/clean\20261028_080737_reject1_toobig_2.jpg
+2026-10-28 14:30:05,tape_ring,Not Golf Ball,wrong color: Unknown,107,16.1,0.0000,0.0000,14.5,1.00,55,12,130,snapshots/clean\20261028_080740_reject1_toobig.jpg
+2026-10-28 14:30:05,golf_pink,Golf Ball,Pink,116,20.0,0.0266,0.7481,17.1,0.67,161,172,251,snapshots/clean\20261028_080801_reject1_toobig.jpg
+2026-10-28 14:30:05,golf_pink,Golf Ball,Pink,103,9.6,0.0105,0.7414,21.8,1.00,163,171,251,snapshots/clean\20261028_080802_reject1_toobig.jpg
+2026-10-28 14:30:05,golf_pink,Golf Ball,Pink,106,42.6,0.0619,0.7079,53.6,0.76,162,166,251,snapshots/clean\20261028_080838_reject1_toobig.jpg
+2026-10-28 14:30:05,golf_white,Golf Ball,White,106,40.7,0.0131,0.8631,14.7,0.62,97,65,252,snapshots/clean\20261028_080838_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,105,40.6,0.0682,0.6712,56.2,0.82,163,165,251,snapshots/clean\20261028_080839_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,107,38.3,0.0119,0.7973,15.6,0.57,97,63,251,snapshots/clean\20261028_080839_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,105,42.3,0.0624,0.7041,54.9,0.88,163,166,251,snapshots/clean\20261028_080839_reject1_toobig_2.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,105,46.5,0.0127,0.8131,16.0,0.62,96,63,251,snapshots/clean\20261028_080839_reject1_toobig_2.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,103,37.9,0.0589,0.7160,53.2,1.00,163,165,251,snapshots/clean\20261028_080839_reject1_toobig_3.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,109,46.2,0.0128,0.7793,16.1,0.56,97,63,251,snapshots/clean\20261028_080839_reject1_toobig_3.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,101,36.2,0.0623,0.6969,56.0,0.81,163,165,251,snapshots/clean\20261028_080840_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,107,48.2,0.0124,0.7962,16.3,0.60,97,63,251,snapshots/clean\20261028_080840_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,107,40.9,0.0593,0.7224,53.7,0.68,163,166,251,snapshots/clean\20261028_080840_reject1_toobig_2.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,105,43.6,0.0124,0.8146,15.9,0.62,96,64,251,snapshots/clean\20261028_080840_reject1_toobig_2.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,104,42.4,0.0648,0.6821,56.3,1.00,163,165,251,snapshots/clean\20261028_080840_reject1_toobig_3.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,107,46.7,0.0127,0.7900,16.2,0.57,96,63,251,snapshots/clean\20261028_080840_reject1_toobig_3.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,104,42.9,0.0642,0.6820,56.0,0.96,163,165,251,snapshots/clean\20261028_080840_reject1_toobig_4.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,106,47.6,0.0125,0.7941,16.3,0.60,96,63,251,snapshots/clean\20261028_080840_reject1_toobig_4.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,103,39.2,0.0606,0.7102,53.5,1.00,163,165,251,snapshots/clean\20261028_080840_reject1_toobig_5.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,107,47.3,0.0124,0.8009,16.1,0.62,97,63,251,snapshots/clean\20261028_080840_reject1_toobig_5.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,106,40.9,0.0597,0.7187,54.0,0.74,163,166,251,snapshots/clean\20261028_080841_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,105,46.7,0.0131,0.8248,15.9,0.62,96,64,251,snapshots/clean\20261028_080841_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,104,38.5,0.0599,0.7110,53.6,1.00,163,165,251,snapshots/clean\20261028_080841_reject1_toobig_2.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,107,48.0,0.0128,0.7941,16.2,0.58,97,63,251,snapshots/clean\20261028_080841_reject1_toobig_2.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,105,40.3,0.0594,0.7181,53.5,0.82,163,165,251,snapshots/clean\20261028_080841_reject1_toobig_3.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,107,48.0,0.0122,0.7985,16.2,0.62,97,63,251,snapshots/clean\20261028_080841_reject1_toobig_3.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,107,45.4,0.0678,0.6634,55.4,0.68,163,165,251,snapshots/clean\20261028_080842_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,105,48.9,0.0124,0.8174,16.0,0.64,96,64,251,snapshots/clean\20261028_080842_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,104,38.5,0.0605,0.7123,53.6,1.00,163,165,251,snapshots/clean\20261028_080842_reject1_toobig_2.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,106,47.6,0.0121,0.8045,16.0,0.65,97,63,251,snapshots/clean\20261028_080842_reject1_toobig_2.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,103,40.4,0.0621,0.6894,54.5,1.00,163,165,251,snapshots/clean\20261028_080842_reject1_toobig_3.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,104,47.1,0.0138,0.8280,16.1,0.62,96,64,252,snapshots/clean\20261028_080842_reject1_toobig_3.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,101,39.6,0.0639,0.6899,57.1,0.81,163,164,251,snapshots/clean\20261028_080843_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,104,42.6,0.0117,0.8334,15.6,0.64,96,64,252,snapshots/clean\20261028_080843_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,105,40.7,0.0604,0.7170,54.0,0.86,163,165,251,snapshots/clean\20261028_080846_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,105,46.4,0.0128,0.8222,16.0,0.65,96,64,251,snapshots/clean\20261028_080846_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,106,40.6,0.0598,0.7220,53.4,0.75,163,166,251,snapshots/clean\20261028_080847_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,105,47.6,0.0122,0.8198,16.0,0.62,96,63,251,snapshots/clean\20261028_080847_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,105,40.3,0.0609,0.7071,54.3,0.97,163,165,251,snapshots/clean\20261028_080847_reject1_toobig_2.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,106,48.4,0.0127,0.8053,16.0,0.62,97,63,251,snapshots/clean\20261028_080847_reject1_toobig_2.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,102,39.6,0.0625,0.6991,55.0,1.00,163,165,251,snapshots/clean\20261028_080847_reject1_toobig_3.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,104,43.5,0.0117,0.8346,15.5,0.68,96,63,252,snapshots/clean\20261028_080847_reject1_toobig_3.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,105,43.3,0.0655,0.6813,55.6,0.89,163,165,251,snapshots/clean\20261028_080848_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,104,47.4,0.0128,0.8351,16.0,0.65,96,64,252,snapshots/clean\20261028_080848_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,104,38.8,0.0602,0.7129,53.6,1.00,163,165,251,snapshots/clean\20261028_080849_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,104,39.3,0.0601,0.7116,53.6,1.00,163,165,251,snapshots/clean\20261028_080849_reject1_toobig_2.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,105,48.2,0.0123,0.8178,15.9,0.62,96,64,251,snapshots/clean\20261028_080849_reject1_toobig_2.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,106,40.1,0.0603,0.7217,53.4,0.74,163,166,251,snapshots/clean\20261028_080850_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,104,49.4,0.0136,0.8123,16.3,0.62,98,65,251,snapshots/clean\20261028_080850_reject1_toobig.jpg
+2026-10-28 14:30:06,tennis,Not Golf Ball,too big,191,7.2,0.0000,0.4849,18.1,0.94,44,124,241,snapshots/clean\20261028_082125_reject1_toobig.jpg
+2026-10-28 14:30:06,tennis,Not Golf Ball,too big,174,8.1,0.0000,0.8362,6.5,1.00,43,146,254,snapshots/clean\20261028_082128_reject1_toobig.jpg
+2026-10-28 14:30:06,tennis,Not Golf Ball,too big,175,8.3,0.0000,0.8199,7.1,0.99,43,146,254,snapshots/clean\20261028_082131_reject1_toobig.jpg
+2026-10-28 14:30:06,tennis_logo,Not Golf Ball,too small,70,19.1,0.0688,0.0000,49.7,0.65,49,136,148,snapshots/clean\20261028_082133_reject1_toobig.jpg
+2026-10-28 14:30:06,tennis,Not Golf Ball,too big,178,36.8,0.0144,0.0272,28.0,0.71,39,159,220,snapshots/clean\20261028_082133_reject1_toobig_2.jpg
+2026-10-28 14:30:06,tennis_logo,Not Golf Ball,too small,60,36.0,0.0648,0.0000,51.9,0.79,50,129,131,snapshots/clean\20261028_082133_reject1_toosmall.jpg
+2026-10-28 14:30:06,tennis,Not Golf Ball,too big,176,54.2,0.0219,0.7144,30.8,1.00,43,146,253,snapshots/clean\20261028_082138_reject1_toobig.jpg
+2026-10-28 14:30:06,tennis,Not Golf Ball,too big,176,9.8,0.0000,0.8260,13.8,0.99,43,144,254,snapshots/clean\20261028_082144_reject1_toobig.jpg
+2026-10-28 14:30:06,tennis,Not Golf Ball,too big,176,8.4,0.0000,0.7940,13.2,0.99,41,153,254,snapshots/clean\20261028_082159_reject1_toobig.jpg
+2026-10-28 14:30:06,tennis,Not Golf Ball,too big,178,11.7,0.0000,0.7365,15.3,0.99,42,148,254,snapshots/clean\20261028_082206_reject1_toobig.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,102,12.5,0.0179,0.8366,7.9,0.78,102,59,251,snapshots/clean\20261028_082219_golf1_white.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,101,85.8,0.0531,0.6846,24.2,0.65,101,59,249,snapshots/clean\20261028_082226_golf1_white.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,102,49.2,0.0408,0.7537,22.7,0.69,101,59,250,snapshots/clean\20261028_082234_golf1_white.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,100,67.6,0.0417,0.7275,23.9,0.65,100,59,250,snapshots/clean\20261028_082237_golf1_white.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,102,148.3,0.0616,0.7345,33.6,0.64,101,59,250,snapshots/clean\20261028_082242_golf1_white.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,100,163.8,0.0627,0.7289,34.2,0.64,101,59,250,snapshots/clean\20261028_082245_golf1_white.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,102,9.0,0.0041,0.8738,6.2,0.61,101,58,252,snapshots/clean\20261028_082249_golf1_white.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,102,9.1,0.0040,0.8737,6.1,0.61,101,58,251,snapshots/clean\20261028_082250_golf1_white.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,103,9.6,0.0000,0.8622,6.5,0.62,101,59,252,snapshots/clean\20261028_082251_golf1_white.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,102,9.2,0.0043,0.8712,6.2,0.62,101,58,251,snapshots/clean\20261028_082251_golf1_white_2.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,102,9.1,0.0048,0.8826,6.0,0.62,101,59,252,snapshots/clean\20261028_082251_golf1_white_3.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,103,9.6,0.0084,0.7515,12.2,0.62,102,67,250,snapshots/clean\20261028_082254_golf1_white.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,101,40.7,0.0489,0.0463,26.7,0.81,99,69,214,snapshots/clean\20261028_082259_golf1_white.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,101,39.7,0.0430,0.1675,17.8,0.92,98,67,227,snapshots/clean\20261028_082302_golf1_white.jpg
+2026-10-28 14:30:06,golf_white,Golf Ball,White,102,47.9,0.0436,0.0329,23.0,0.71,96,65,210,snapshots/clean\20261028_082305_golf1_white.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,101,4.6,0.0000,0.5805,14.6,1.00,164,179,246,snapshots/clean\20261028_082313_golf1_pink.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,102,4.8,0.0000,0.8747,5.5,1.00,165,172,251,snapshots/clean\20261028_082316_golf1_pink.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,101,4.5,0.0019,0.2143,24.8,1.00,164,178,224,snapshots/clean\20261028_082321_golf1_pink.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,101,5.2,0.0021,0.7366,16.7,1.00,165,171,250,snapshots/clean\20261028_082324_golf1_pink.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,101,5.5,0.0024,0.7635,17.8,1.00,165,171,249,snapshots/clean\20261028_082327_golf1_pink.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,101,33.0,0.0528,0.4322,63.3,1.00,164,172,238,snapshots/clean\20261028_082331_golf1_pink.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,103,35.6,0.0650,0.3887,62.8,1.00,163,175,236,snapshots/clean\20261028_082336_golf1_pink.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,103,30.7,0.0600,0.3572,62.7,1.00,164,172,232,snapshots/clean\20261028_082339_golf1_pink.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,102,33.7,0.0620,0.3611,63.5,1.00,164,172,231,snapshots/clean\20261028_082342_golf1_pink.jpg
+2026-10-28 14:30:06,golf_pink,Golf Ball,Pink,101,7.1,0.0046,0.7304,12.3,1.00,165,169,251,snapshots/clean\20261028_082348_golf1_pink.jpg
+2026-10-28 14:30:06,golf_neon,Golf Ball,Neon,102,6.0,0.0026,0.7172,14.2,1.00,43,155,254,snapshots/clean\20261028_082356_golf1_neon.jpg
+2026-10-28 14:30:06,golf_neon,Golf Ball,Neon,102,5.1,0.0017,0.9918,3.6,1.00,41,148,255,snapshots/clean\20261028_082359_golf1_neon.jpg
+2026-10-28 14:30:06,golf_neon,Golf Ball,Neon,102,4.1,0.0000,0.9990,0.9,1.00,40,168,255,snapshots/clean\20261028_082405_golf1_neon.jpg
+2026-10-28 14:30:07,golf_neon,Golf Ball,Neon,101,4.7,0.0000,0.9349,5.7,0.89,39,153,255,snapshots/clean\20261028_082412_golf1_neon.jpg
+2026-10-28 14:30:07,golf_neon,Golf Ball,Neon,106,4.9,0.0004,0.9560,4.4,0.99,39,158,255,snapshots/clean\20261028_082415_golf1_neon.jpg
+2026-10-28 14:30:07,golf_neon,Golf Ball,Neon,104,4.3,0.0000,0.8910,6.9,1.00,41,159,255,snapshots/clean\20261028_082421_golf1_neon.jpg
+2026-10-28 14:30:07,golf_neon,Golf Ball,Neon,98,3.7,0.0000,0.5391,21.6,0.58,38,188,250,snapshots/clean\20261028_082423_golf1_neon_2.jpg
+2026-10-28 14:30:07,golf_neon,Golf Ball,Neon,105,19.0,0.0130,0.5649,18.0,1.00,40,181,245,snapshots/clean\20261028_082427_golf1_neon.jpg
+2026-10-28 14:30:07,golf_neon,Golf Ball,Neon,105,24.0,0.0147,0.9595,8.1,0.94,40,159,255,snapshots/clean\20261028_082430_golf1_neon.jpg
+2026-10-28 14:30:07,golf_neon,Golf Ball,Neon,104,23.6,0.0138,0.9624,7.7,1.00,40,160,255,snapshots/clean\20261028_082433_golf1_neon.jpg
+2026-10-28 14:30:07,golf_neon,Golf Ball,Neon,102,21.4,0.0100,0.9588,7.9,0.97,40,166,255,snapshots/clean\20261028_082436_golf1_neon.jpg
+2026-10-28 14:30:07,golf_neon,Golf Ball,Neon,101,3.5,0.0000,0.5693,23.1,1.00,42,171,252,snapshots/clean\20261028_082439_golf1_neon.jpg
+2026-10-28 14:30:07,golf_neon,Golf Ball,Neon,101,2.5,0.0000,1.0000,0.6,1.00,42,143,255,snapshots/clean\20261028_082442_golf1_neon.jpg
+2026-10-28 14:30:07,pingpong_orange,Not Golf Ball,wrong color: Orange,104,25.5,0.0430,0.0000,30.9,0.69,18,210,205,snapshots/clean\20261028_082449_reject1_wrongcolorOrange.jpg
+2026-10-28 14:30:07,pingpong_orange,Not Golf Ball,wrong color: Orange,96,8.2,0.0047,0.5407,15.3,0.82,17,212,244,snapshots/clean\20261028_082454_reject1_wrongcolorOrange.jpg
+2026-10-28 14:30:07,pingpong_orange,Not Golf Ball,wrong color: Orange,100,22.9,0.0127,0.8933,20.7,0.79,18,203,253,snapshots/clean\20261028_082457_reject1_wrongcolorOrange.jpg
+2026-10-28 14:30:07,pingpong_orange,Not Golf Ball,wrong color: Orange,94,9.6,0.0080,0.0087,19.7,1.00,18,196,227,snapshots/clean\20261028_082501_reject1_wrongcolorOrange.jpg
+2026-10-28 14:30:07,pingpong_orange,Not Golf Ball,wrong color: Orange,95,14.4,0.0102,0.8576,19.5,1.00,18,206,252,snapshots/clean\20261028_082504_reject1_wrongcolorOrange.jpg
+2026-10-28 14:30:07,pingpong_orange,Not Golf Ball,wrong color: Orange,95,4.3,0.0011,0.8795,7.4,1.00,18,200,252,snapshots/clean\20261028_082513_reject1_wrongcolorOrange.jpg
+2026-10-28 14:30:07,pingpong_orange,Not Golf Ball,wrong color: Orange,96,5.0,0.0018,0.8642,8.9,1.00,18,201,252,snapshots/clean\20261028_082516_reject1_wrongcolorOrange.jpg
+2026-10-28 14:30:07,pingpong_orange,Not Golf Ball,wrong color: Orange,95,4.9,0.0024,0.7107,11.8,1.00,17,190,250,snapshots/clean\20261028_082524_reject1_wrongcolorOrange.jpg
+2026-10-28 14:30:07,pingpong_orange,Not Golf Ball,wrong color: Orange,93,6.3,0.0030,0.8612,10.2,1.00,18,202,252,snapshots/clean\20261028_082527_reject1_wrongcolorOrange.jpg

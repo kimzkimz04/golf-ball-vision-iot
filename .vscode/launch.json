@@ -1,0 +1,99 @@
+{
+  // กด F5 หรือเลือกจากแท็บ Run and Debug (Ctrl+Shift+D) แล้วกด ▶
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "1. ตรวจจับลูกกอล์ฟ + ส่ง MQTT (กล้องจริง)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/ball_detect.py",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": { "PYTHONIOENCODING": "utf-8" }
+    },
+    {
+      "name": "2. ตรวจจับ + แถบปรับค่า (--tune)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/ball_detect.py",
+      "args": ["--tune"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": { "PYTHONIOENCODING": "utf-8" }
+    },
+    {
+      "name": "3. รีเพลย์ภาพตัวอย่าง samples (ไม่ต้องใช้กล้อง)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/ball_detect.py",
+      "args": ["--source", "samples"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": { "PYTHONIOENCODING": "utf-8" }
+    },
+    {
+      "name": "4. สแกนหากล้อง (--list)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/ball_detect.py",
+      "args": ["--list"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": { "PYTHONIOENCODING": "utf-8" }
+    },
+    {
+      "name": "5. ดูข้อความ MQTT สด ๆ",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/mqtt_monitor.py",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": { "PYTHONIOENCODING": "utf-8" }
+    },
+    {
+      "name": "6. สตรีมกล้องให้ OpenCV Container",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/camera_stream.py",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": { "PYTHONIOENCODING": "utf-8" }
+    },
+    {
+      "name": "7. เก็บข้อมูลปรับเกณฑ์ (--collect) เลือกชื่อลูก",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/ball_detect.py",
+      "args": ["--collect", "${input:ballLabel}"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": { "PYTHONIOENCODING": "utf-8" }
+    },
+    {
+      "name": "8. วิเคราะห์ข้อมูลที่เก็บ -> แนะนำเกณฑ์",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/analyze_calibration.py",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": { "PYTHONIOENCODING": "utf-8" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "ballLabel",
+      "type": "pickString",
+      "description": "วางลูกอะไรไว้หน้ากล้อง? (ขึ้นต้น golf_ = ลูกกอล์ฟ, อย่างอื่น = ไม่ใช่)",
+      "options": [
+        "golf_white",
+        "golf_pink",
+        "golf_neon",
+        "pingpong_orange",
+        "pingpong_white",
+        "tennis",
+        "tape_ring",
+        "empty_table"
+      ]
+    }
+  ]
+}

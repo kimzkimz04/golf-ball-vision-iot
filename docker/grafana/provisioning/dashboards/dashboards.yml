@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: golf
+    folder: Golf Vision
+    type: file
+    # แก้ dashboard ในหน้าเว็บได้ แต่ถ้าอยากเก็บถาวรให้ Export JSON มาทับไฟล์ใน docker/grafana/dashboards
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

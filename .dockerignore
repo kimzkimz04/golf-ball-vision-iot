@@ -1,0 +1,14 @@
+.venv
+.git
+.vscode
+.env
+__pycache__
+**/__pycache__
+docker
+output
+tools
+google_sheets
+*.csv
+*.txt
+!requirements-docker.txt
+snapshots/*.jpg
