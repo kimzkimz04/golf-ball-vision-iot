@@ -159,8 +159,8 @@ netsh advfirewall firewall add rule name="Golf IoT" dir=in action=allow protocol
 
 6. มือถือเปิด `http://10.147.17.5:3000` (Grafana), `:1880` (Node-RED), `:5678` (n8n)
 
-> เครื่องนี้ (node `73282a7f3c`) อยู่ใน network `88c5b1f3395d5d99` ได้ IP **10.236.55.129**
-> → Grafana http://10.236.55.129:3000 · Node-RED http://10.236.55.129:1880 · n8n http://10.236.55.129:5678
+> ดู IP ของเครื่องตัวเองได้ที่ my.zerotier.com → Members ช่อง *Managed IPs*
+> หรือใน PowerShell: `Get-NetIPAddress -AddressFamily IPv4 | Where-Object InterfaceAlias -match ZeroTier`
 
 SSH เข้าเครื่องผ่าน ZeroTier (เหมือนสัปดาห์ที่ 9): Settings → System → Optional features → เพิ่ม **OpenSSH Server**
 แล้วจากอีกเครื่องใช้ VS Code Remote-SSH ไปที่ `ชื่อผู้ใช้@10.147.17.5`
